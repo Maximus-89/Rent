@@ -13,9 +13,6 @@ bot = telebot.TeleBot('7754918991:AAGcSof33WVG-GTUy97GZVGCH7qPMYLDZnE')
 conn = sqlite3.connect('profiles.db', check_same_thread=False)
 cursor = conn.cursor()
 
-# Добавление столбца photos в существующую таблицу
-cursor.execute('ALTER TABLE profiles ADD COLUMN photos TEXT')
-conn.commit()
 
 # Создание таблицы для хранения анкет
 cursor.execute('''
@@ -88,20 +85,7 @@ def handle_geolocation(message):
     user_data[user_id]['geolocation'] = geolocation
     user_state[message.chat.id] = None
     logging.info(f'User {user_id} entered geolocation: {geolocation}')
-    markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-    btn_photo = types.KeyboardButton('Добавить фотографию')
-    markup.add(btn_photo)
-    bot.send_message(message.chat.id, f'Местоположение: {geolocation}. Теперь добавьте фотографии.', reply_markup=markup )
-    user_state[message.chat.id] = 'waiting_for_photos'
-
-@bot.message_handler(func=lambda message: user_state.get(message.chat.id) == 'waiting_for_photos')
-def request_photo(message):
-    bot.send_message(message.chat.id, 'Нажмите кнопку "Добавить фотографию", чтобы отправить фото.')
-    user_state[message.chat.id] = 'waiting_for_photo_button'
-
-@bot.message_handler(func=lambda message: user_state.get(message.chat.id) == 'waiting_for_photo_button' and message.text == 'Добавить фотографию')
-def handle_photo_request(message):
-    bot.send_message(message.chat.id, 'Отправьте фотографию.')
+    bot.send_message(message.chat.id, f'Местоположение: {geolocation}. Теперь отправьте фотографии.')
     user_state[message.chat.id] = 'waiting_for_photo_upload'
 
 @bot.message_handler(func=lambda message: user_state.get(message.chat.id) == 'waiting_for_photo_upload', content_types=['photo'])
@@ -120,6 +104,7 @@ def handle_photos_done(message):
     bot.send_message(message.chat.id, 'Теперь добавьте описание.')
     user_state[message.chat.id] = 'waiting_for_description'
 
+    
 @bot.message_handler(func=lambda message: user_state.get(message.chat.id) == 'waiting_for_description')
 def handle_description(message):
     description = message.text
